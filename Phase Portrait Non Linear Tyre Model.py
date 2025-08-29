@@ -30,9 +30,9 @@ delta = np.deg2rad(delta_deg)
 # ---------------------------------------------------------
 F_zf = m * 9.81 * lr / (lf + lr)
 F_zr = m * 9.81 * lf / (lf + lr)
-F_z0 = 1000  # nominal tyre load in N
+F_z0 = 735.75  # nominal tyre load in N
 
-Gamma = np.deg2rad(-1)  # camber angle in degrees
+Gamma = np.deg2rad(0)  # camber angle in degrees
 
 # -------------------------------
 # Front tyre parameters
@@ -51,6 +51,8 @@ Horizontal_axis = 1  # range of side slip values / graph axis (radians)
 Vertical_axis = 2  # range of yaw rate values /  graph axis(radians)
 Plot_Trajectories = False    #red lines, change to False if you want to disable
 
+
+
 # -------------------------------------------------
 # Simplified Pacejka "pure slip" lateral model, I have used identical tyres front and rear but this can be modified
 # -------------------------------------------------
@@ -60,6 +62,7 @@ def lateral_pure_slip(alpha, Fz, Fz0, gamma,
                       p_Ky1, p_Ky2, p_Ky3):
 
     dfz = (Fz - Fz0) / Fz0
+
     SHy = 0.0001 + 0.0002 * dfz + 0.003 * gamma
     SVy = Fz * ((0.001 + 0.002 * dfz) + (0.003 + 0.004 * dfz) * gamma)
 
@@ -76,6 +79,27 @@ def lateral_pure_slip(alpha, Fz, Fz0, gamma,
 
     return Dy * np.sin(Cy * np.arctan(By * alpha_y - Ey * (By * alpha_y - np.arctan(By * alpha_y)))) + SVy
 
+
+# This calculates the slope (dFy/dα) at α = 0 for a single tyre.
+eps = 1e-6  # A very small slip angle for numerical differentiation
+
+# Calculate for FRONT tyre
+Fy_f_plus = lateral_pure_slip(eps, F_zf, F_z0, Gamma, p_Cy1_f, p_Dy1_f, p_Dy2_f, p_Dy3_f, p_Ey1_f, p_Ey2_f, p_Ky1_f, p_Ky2_f, p_Ky3_f)
+Fy_f_minus = lateral_pure_slip(-eps, F_zf, F_z0, Gamma, p_Cy1_f, p_Dy1_f, p_Dy2_f, p_Dy3_f, p_Ey1_f, p_Ey2_f, p_Ky1_f, p_Ky2_f, p_Ky3_f)
+C_alpha_tire_front = (Fy_f_plus - Fy_f_minus) / (2 * eps) # Stiffness per SINGLE front tyre (N/rad)
+
+# Calculate for REAR tyre
+Fy_r_plus = lateral_pure_slip(eps, F_zr, F_z0, Gamma, p_Cy1_r, p_Dy1_r, p_Dy2_r, p_Dy3_r, p_Ey1_r, p_Ey2_r, p_Ky1_r, p_Ky2_r, p_Ky3_r)
+Fy_r_minus = lateral_pure_slip(-eps, F_zr, F_z0, Gamma, p_Cy1_r, p_Dy1_r, p_Dy2_r, p_Dy3_r, p_Ey1_r, p_Ey2_r, p_Ky1_r, p_Ky2_r, p_Ky3_r)
+C_alpha_tire_rear = (Fy_r_plus - Fy_r_minus) / (2 * eps) # Stiffness per SINGLE rear tyre (N/rad)
+
+# The bicycle model uses stiffness for the entire AXLE (2 tyres)
+C_alpha_axle_front = 2 * C_alpha_tire_front
+C_alpha_axle_rear = 2 * C_alpha_tire_rear
+
+print(f"\nCalculated from Pacejka Model:")
+print(f"Front Axle Cornering Stiffness: {C_alpha_axle_front:.0f} N/rad")
+print(f"Rear Axle Cornering Stiffness: {C_alpha_axle_rear:.0f} N/rad")
 
 # -------------------------------------------------
 # System dynamics (β-dot, r-dot)
