@@ -7,8 +7,9 @@ m = 300.0 #kg
 Iz = 150.0 #yaw inertia in kgm^2
 lf = 0.8 # CoG to front axle in m
 lr = 0.8 # CoG to rear axle in m
-Caf = 30000  #front tyre stiffness N/rad
-Car = 30000 # rear tyre stiffness N/rad
+Caf = 29430  #front axial cornering stiffness N/rad
+Car = 29430 # rear axial cornering stiffness N/rad   (2*tyre cornering stiffness)
+
 
 # Speed and steer input
 V = 12 # speed in m/s
@@ -65,16 +66,8 @@ ax.streamplot(BETA, R, beta_dot, r_dot, color="blue", density=3.0, linewidth=1)
 initial_conditions = [[0.1, 0.2], [-0.1, 0.2], [0.1, -0.2], [-0.1, -0.2]]
 for x0 in initial_conditions:
     sol = solve_ivp(f, [0, 5], x0, t_eval=np.linspace(0, 5, 200))
-    ax.plot(sol.y[0], sol.y[1], 'r-', lw=2)
+    #ax.plot(sol.y[0], sol.y[1], 'r-', lw=2)
 
-# Equilibrium point
-ax.plot(x_eq[0], x_eq[1], 'ko', markersize=10, label="Equilibrium")
-ax.set_xlabel("β [rad]")
-ax.set_ylabel("r [rad/s]")
-ax.set_title("Phase Plane Portrait (Linear Bicycle Model)")
-ax.legend()
-ax.grid(True)
-plt.show()
 
 # -------------------------------------------------
 # Stability analysis
@@ -87,3 +80,12 @@ if np.all(np.real(eigenvalues) < 0):
     print("System is stable")
 else:
     print("System is unstable")
+
+# Equilibrium point
+ax.plot(x_eq[0], x_eq[1], 'ko', markersize=10, label="Equilibrium")
+ax.set_xlabel("β [rad]")
+ax.set_ylabel("r [rad/s]")
+ax.set_title("Phase Plane Portrait (Linear Tyre Model)")
+ax.legend()
+ax.grid(True)
+plt.show()
